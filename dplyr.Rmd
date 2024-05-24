@@ -1,0 +1,248 @@
+---
+title: "dplyr reference"
+author: "Yixiang Luo"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+bibliography: references.bib
+header-includes:
+   - \usepackage{float}
+   - \usepackage{bbm}
+   - \usepackage{amssymb}
+   - \usepackage{amsmath}
+   - \usepackage{amsthm}
+   - \usepackage{mathtools}
+   - \usepackage{mathrsfs}
+output: 
+  pdf_document:
+    citation_package: natbib
+    number_sections: true
+---
+
+
+```{r setup, echo = FALSE, message=FALSE, warning=FALSE}
+# load in useful packages
+library(dplyr)
+
+
+
+# set default knitr chunks
+knitr::opts_chunk$set(
+  echo = FALSE,  # don't print the code chunk
+  warning = FALSE,  # don't print warnings
+  message = FALSE,  # don't print messages
+#  fig.width = 6,  # set default width of figures
+ fig.height = 4,  # set default height of figures
+#  dpi=300, 
+  fig.align = "center",  # always align figure in center
+  fig.pos = "H",  # always plot figure at the exact location of the code chunk
+  cache = FALSE)  # don't cache results
+
+```
+
+``` {r}
+# example data
+dim(starwars)
+
+slice(starwars, 1:10)
+# View(starwars)
+```
+
+# dplyr
+
+https://dplyr.tidyverse.org/reference/index.html
+
+## Single table verbs
+dplyr aims to provide a function for each basic verb of data manipulation. These verbs can be organised into three categories based on the component of the dataset that they work with:
+
+- Rows:
+  - filter() chooses rows based on column values.
+  - slice() chooses rows based on location.
+  - arrange() changes the order of the rows.
+- Columns:
+  - select() changes whether or not a column is included.
+  - rename() changes the name of columns.
+  - mutate() changes the values of columns and creates new columns.
+  - relocate() changes the order of the columns.
+- Groups of rows:
+  - summarise() collapses a group into a single row.
+
+1. filter
+- what exactly is the condition?
+  treat varname as df$varname and return a vector of T/F
+``` {r}
+starwars %>% filter(height > 101:187)
+# next line is equiv to previous line. Don't be confused with (hair_color == "blond") and think all non-blond are kept, since (hair_color == "blond") is a vector and only the first element is taken by "if"
+starwars %>% filter(if(hair_color == "blond") height > 101:187 else T)
+starwars %>% filter(rep(T, 87))  # everyone remains
+starwars %>% filter(rep(T, 86))  # error of mismatching dim
+```
+
+2. slice: pick rows
+``` {r}
+starwars %>% slice(c(3,1,2))
+starwars %>% group_by(hair_color) %>% slice(1)
+```
+
+3. arrange(col) = slice(order(df$col))
+- NA are always sorted to the end for local data
+- grouped arrange ignores groups unless specifically ask: .by_group = TRUE
+``` {r}
+starwars %>% arrange(height)
+starwars %>% arrange(c(3,2,1,4:87))
+
+starwars %>% group_by(hair_color) %>% arrange(height)
+starwars %>% group_by(hair_color) %>% arrange(height, .by_group = T)
+```
+
+4. select: select column by certain dplyr rules
+- `c() for combining selections`
+- `: for selecting a range of consecutive variables`
+- `! for taking the complement of a set of variables`
+- indeces
+- `matches(): Matches a regular expression`
+``` {r}
+starwars %>% select(c("height", "hair_color"))
+starwars %>% select("height":"hair_color")
+starwars %>% select(1:3)
+starwars %>% select(matches("^h.+"))
+```
+
+5. mutate(col_name = vector value)
+``` {r}
+starwars %>% mutate(hello = 1:87) %>% select(matches("^h.+"))
+```
+
+6. group_by(vector values (intersection)), ungroup()
+``` {r}
+starwars %>% group_by(c(rep(0, 3), rep(1, 84))) %>% summarise(max_hight = max(height))
+starwars %>% group_by(height_binned = cut(height, 3))
+
+starwars %>% group_by(hair_color, skin_color)
+starwars %>% group_by(paste(hair_color, skin_color))
+
+starwars %>% group_by(hair_color, skin_color) %>% ungroup(skin_color)
+```
+``` {r}
+# verbes act on each group
+starwars %>% group_by(hair_color) %>% filter(rep(T, 87))   # error
+starwars %>% group_by(hair_color) %>% mutate(a = 1:87, .before = "name")   # error
+starwars %>% group_by(hair_color) %>% mutate(group_count = length(hair_color), .before = "name")
+starwars %>% group_by(hair_color) %>% arrange(height, .by_group = T)   # need .by_group = T
+```
+
+
+7. summarise(): collapse groups
+``` {r}
+starwars %>% group_by(c(rep(0, 3), rep(1, 84))) %>% summarise(max_hight = max(height), mean_BY = mean(birth_year, na.rm = T))
+```
+
+8. reframe(): like summarise, but can return arbitrary lengthed output
+``` {r}
+starwars %>% group_by(sex) %>% reframe(stat = c(max(height, na.rm = T), median(height, na.rm = T), min(height, na.rm = T)))
+```
+
+9. pivot
+``` {r}
+library(tidyr)
+relig_income
+long <- relig_income %>% pivot_longer(!"religion", names_to = "income", values_to = "count")
+long
+long %>% pivot_wider(names_from = income, values_from = count)
+```
+
+
+## table manipulating
+1. bind
+``` {r}
+foo <- data.frame(a = 1:87, b = T)
+cbind(foo, starwars)
+rbind(data.frame(a = 1, b = "c"), foo)
+```
+
+2. set operations using the rows of a data frame.
+
+`intersect(x, y)` finds all rows in both x and y.
+
+`union(x, y)` finds all rows in either x or y, excluding duplicates.
+
+`union_all(x, y)` finds all rows in either x or y, including duplicates.
+
+`setdiff(x, y)` finds all rows in x that aren't in y.
+
+`symdiff(x, y)` computes the symmetric difference, i.e. all rows in x that aren't in y and all rows in y that aren't in x.
+
+`setequal(x, y)` returns TRUE if x and y contain the same rows (ignoring order).
+
+Note that intersect(), union(), setdiff(), and symdiff() remove duplicates in x and y
+
+``` {r}
+df1 <- data.frame(a = 1, b = 1:3)
+df2 <- data.frame(a = 1, b = 3:5)
+df3 <- data.frame(a=1, c=3:5)
+
+# must have the same columns. intersect(df1, df3) -> error
+intersect(df1, df2)
+union(df1, df2)
+union_all(df1, df2)
+setdiff(df1, df2)
+setdiff(df2, df1)
+symdiff(df1, df2)
+
+setequal(df1, df2)
+setequal(df2, df3)    # same value, different col names -> False
+```
+
+3. join
+- inner_join() only keeps observations from x that have a matching key in y.
+- left_join() keeps all observations in x.
+- right_join() keeps all observations in y.
+- full_join() keeps all observations in x and y.
+- cross_join() match each row in x to every row in y, resulting in a data frame with nrow(x) * nrow(y) rows. (no `by` argument)
+
+join condition:
+`join_by(x$col1 == y$col2, closest(col3 >= col4))`
+- simplification: left col is from left df; just one col name if shared name & use ==
+- not accept general conditioning, only take `==`, `>=`, `>`, `<=`, `<`, `closest()`, connected by comma ("and" logic). Don't accept expression.
+  - what if want expression? e.g. `x$days <= y$days + 1`. mutate an auxiliary column beforehand.
+  - what if need more complicated conditioning? Use a more general join (e.g. cross_join() always) and then filter().
+- closest(x >= y) is interpreted as: For each value in x, find the closest value in y that is less than or equal to that x value.
+closest() will always use the left-hand table (x) as the primary table, and the right-hand table (y) as the one to find the closest match in
+``` {r}
+sales <- tibble(
+  id = c(1, 1, 1, 2, 3),
+  sale_date = as.POSIXct(c("2018-12-31", "2019-01-02", "2019-01-05", "2019-01-04", "2019-01-01")),
+  other = "a"
+)
+promos <- tibble(
+  id = c(1, 1, 2),
+  promo_date = as.POSIXct(c("2019-01-01", "2019-01-05", "2019-01-02"))
+)
+
+inner_join(sales, promos, by = "id")
+
+inner_join(sales, promos, by = join_by(id == id, x$sale_date <= y$promo_date))
+
+left_join(sales, promos, by = join_by(id, closest(sale_date <= promo_date)))
+
+cross_join(sales, promos) %>% filter(id.x == id.y | sale_date <= promo_date)
+```
+
+## Apply functions
+1. across: use with mutate(), mutate a new col for each old col.
+`across(.cols, .fns = list of functions, .names = "{.col}_{.fn}")` apply `.fns` to `.cols`.
+``` {r}
+starwars %>% mutate(across("height":"mass", .fns = list(mean = ~ mean(.x, na.rm = T), shift = ~ .x+1), .names = "{.col}-{.fn}"), .before = "name")
+```
+
+2. `if_any` and `if_all`
+same as `across`, but expect T/F output and then take a all/any logic.
+``` {r}
+starwars %>% filter(if_any("height":"mass", .fns = list(cond1 = ~ .x < 70, cond2 = ~ .x > 100)))
+starwars %>% mutate(a = if_any("height":"mass", .fns = list(cond1 = ~ .x < 70, cond2 = ~ .x > 100)), .before = "name")
+```
+
+
+
+
+
+
+

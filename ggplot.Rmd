@@ -1,0 +1,83 @@
+---
+title: "dplyr reference"
+author: "Yixiang Luo"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+bibliography: references.bib
+header-includes:
+   - \usepackage{float}
+   - \usepackage{bbm}
+   - \usepackage{amssymb}
+   - \usepackage{amsmath}
+   - \usepackage{amsthm}
+   - \usepackage{mathtools}
+   - \usepackage{mathrsfs}
+output: 
+  pdf_document:
+    citation_package: natbib
+    number_sections: true
+---
+
+
+```{r setup, echo = FALSE, message=FALSE, warning=FALSE}
+# load in useful packages
+library(tidyverse)
+
+
+
+# set default knitr chunks
+knitr::opts_chunk$set(
+  echo = FALSE,  # don't print the code chunk
+  warning = FALSE,  # don't print warnings
+  message = FALSE,  # don't print messages
+#  fig.width = 6,  # set default width of figures
+ fig.height = 4,  # set default height of figures
+#  dpi=300, 
+  fig.align = "center",  # always align figure in center
+  fig.pos = "H",  # always plot figure at the exact location of the code chunk
+  cache = FALSE)  # don't cache results
+
+```
+
+``` {r}
+# example data
+x <- 1:10
+y1 <- x + rnorm(10)
+y2 <- x + rnorm(10) + 2
+data <- rbind(data.frame(x = x, y = y1, low = y1-1, up = y1+1, group = "one"),
+              data.frame(x = x, y = y2, low = y2-1, up = y2+1, group = "two"))
+group_colors <- c("grey", "dodgerblue4")
+```
+
+# ggplot
+
+https://dplyr.tidyverse.org/reference/index.html
+
+## draw legend icon manually
+
+1. error bar
+``` {r}
+GeomErrorbar$draw_key <- function(data, params, size){
+  if(!(data$colour %in% c("dodgerblue4"))){
+    data$linetype[is.na(data$linetype)] <- 0
+    grid::segmentsGrob(c(0.4, 0.4, 0.5), c(0.2, 0.8, 0.2), c(0.6, 0.6, 0.5), c(0.2, 0.8, 0.8),
+                       gp = grid::gpar(col = alpha(data$colour, data$alpha),
+                                       lwd = 0.8, lty = data$linetype, lineend = "butt"),
+                       arrow = params$arrow) 
+  }
+}
+ggplot(data, aes(x = x, y = y, color = group)) +
+  geom_line() +
+  geom_errorbar(aes(x = x, y = y, ymin = low, ymax = up, color = group), 
+                size = 0.5, position = "dodge") +
+  scale_color_manual(values = group_colors, labels = c("one", "two"), breaks = c("one", "two"), name = "group") +
+  theme_bw() +
+  theme(panel.grid = element_blank())
+```
+
+
+
+
+
+
+
+
