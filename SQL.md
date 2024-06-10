@@ -18,6 +18,9 @@ https://www.w3school.com.cn/sql/index.asp
     - `[abc]` any one of a b c
     - `[!abc]` any one except a b c
 6. `NULL` value must be checked by `IS NULL` and `IS NOT NULL`
+7. `WHERE` should be used before `GROUP BY` without aggregate functions;
+   `HAVING` should be used after `GROUP BY` with aggregate functions. e.g.
+   `SELECT * FROM table WHERE col > 0 GROUP BY c HAVING count(*) > 5`
 
 ### prefix
 1. `TOP`
@@ -31,7 +34,7 @@ https://www.w3school.com.cn/sql/index.asp
 ```
 SELECT table1.col1, table2.col2
 FROM
-table1 INNER/LEFT/RIGHT/FULL JOIN table2
+(table1 INNER/LEFT/RIGHT/FULL JOIN table2)
 ON table1.col=table2.col
 ```
 4. `UNION ALL` union rows, `UNION` union rows and unique
@@ -39,8 +42,11 @@ ON table1.col=table2.col
 6. `GROUP`: aggregate functions apply to each group
    `SELECT col1, SUM(col2) FROM table GROUP BY col3
 8. alias
-  - table `SELECT * FROM table AS alias`
+  - table `SELECT * FROM table AS alias`; every derived table must have its alias
   - column `SELECT col AS alias FROM table`
+  - cannot use the alias name in the table where it is defined: cannot do 
+    `SELECT count(*) AS c FROM table WHERE c > 5`, should do
+    ``SELECT count(*) AS c FROM table WHERE count(*) > 5``
 ### functions
 1. aggregate functions: `AVG` `COUNT` `MAX` `MIN` `SUM` `FIRST` `LAST` 
    `SELECT FUN(column) FROM table GROUP BY col`
@@ -57,8 +63,10 @@ ON table1.col=table2.col
 WITH query_name AS [sql_subquery_statement]
 [do things]
 ```
+2. Use [Jinja template](https://docs.getdbt.com/guides/using-jinja)
 
 ## Examples
-
+1. [570. Managers with at Least 5 Direct Reports](https://leetcode.com/problems/managers-with-at-least-5-direct-reports/)
+2. 
 
 
