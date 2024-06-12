@@ -39,8 +39,8 @@ ON table1.col=table2.col
 ```
 4. `UNION ALL` union rows, `UNION` union rows and unique
    `SELECT * FROM table1 UNION (ALL) SELECT * FROM table2
-6. `GROUP`: aggregate functions apply to each group
-   `SELECT col1, SUM(col2) FROM table GROUP BY col3
+6. `GROUP`: aggregate functions apply to each group; selected columns must either be a group key or a aggregated result
+   `SELECT col1, SUM(col2) FROM table GROUP BY col1
 8. alias
   - table `SELECT * FROM table AS alias`; every derived table must have its alias
   - column `SELECT col AS alias FROM table`
