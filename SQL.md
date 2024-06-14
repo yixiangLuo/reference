@@ -63,7 +63,29 @@ ON table1.col=table2.col
 WITH query_name AS [sql_subquery_statement]
 [do things]
 ```
-2. Use [Jinja template](https://docs.getdbt.com/guides/using-jinja)
+2. rolling window: `OVER (PARTITION BY col ORDER BY col)`
+   - cumulative sum ordered by col2
+     `SELECT SUM(col1) OVER (ORDER BY col2) FROM table`
+   - cumulative sum ordered by col2 within each group by col3
+     `SELECT SUM(col1) OVER (PARTITION BY col3 ORDER BY col2 DESC) FROM table`
+   - sum over each group by col3 (no aggregation, each row gets the same value in each group/partition)
+     `SELECT SUM(col1) OVER (PARTITION BY col3) FROM table`
+   - select the row that is 2 rows above/below the current row (`NULL` for the first two rows in each partition)
+     `SELECT LAG(col1, 2) OVER (PARTITION BY col3 ORDER BY col2) FROM table`
+     `SELECT LEAD(col1, 2) OVER (PARTITION BY col3 ORDER BY col2) FROM table`
+   - moving window
+	```
+	SELECT SUM(col1) OVER (
+		PARTITION BY col3 ORDER BY col2
+		ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+		-- ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING
+		-- ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING
+	) FROM table
+    ```
+   - `OVER` with `GROUP BY`: aggregation with `GROUP BY` applies first, then computation with `OVER` applies to the aggregated results
+     get the size(group on col1, col2) / size(group on col1)
+     `SELECT 1.0 * COUNT(*) / SUM(COUNT(*)) OVER (PARTITION BY col1) GROUP BY col1, col2 FROM table`
+1. Use [Jinja template](https://docs.getdbt.com/guides/using-jinja)
 
 ## Examples
 1. [570. Managers with at Least 5 Direct Reports](https://leetcode.com/problems/managers-with-at-least-5-direct-reports/)

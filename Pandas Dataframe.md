@@ -56,9 +56,36 @@
 		- group by outside keys: `df.groupby(by = [1,1,0,...,0])`, list must have length = `n_row`. group key will not appear as index or column in the result.
 		- pick the largest three rows in each group
 		  `groups.apply(lambda x: x.sort_values(by = 'col', ascending = False)).head(3)`
-3. sliding window
-2. pivot/melt
-3. append
-4. join
+3. sliding window: `rolling(window = size, min_periods = 1)`: by default, `min_periods = window`, the first `min_periods-1` rows will be `None` 
+   - The logic is similar to `groupby`: the dataframe is divided into sub-dataframe as window slides, apply **one** function to **each column**, then union all resulted rows.
+	   `df.rolling(window = 2, min_periods = 1).apply(lambda x: sum(x))` here `x` is a series (column) and the function is applied to each of all the columns
+   - When row indices are datetime, `window` can be time window.
+     `df.index = pd.date_range('2020-01-01', periods=6, freq='1D')`
+     `df.rolling(window = '2D', min_periods = 1).apply(lambda x: sum(x))` two day time window
+   - When used with `groupby()`,  works as apply `rolling` to each group
+     `df.groupby('col').rolling(window = 2, min_periods = 1).sum() 
+   - Example: cumulative sum: make `window = #rows` and `min_periods = 1`.
+     `df.sort_values('A').rolling(window = len(df), min_periods = 1).sum() 
+4. pivot longer: `melt`
+```
+pd.melt(
+	df,
+	id_vars=[list of colnames that remains intact],
+	value_vars=[list of colnames that will become values of a column],
+	var_name='name of the column that holds colnames in value_vars',
+	value_name='name of the column that holds values of value_vars'
+)
+```
+5. Union: `union_df = pd.concat([df1, df2, df3])`
+6. Join: on the same value, `how='left', 'right', 'outer', 'inner', 'cross'`
+   - `pd.merge(left_df, right_df, on=[list of join keys], how="outer")`
+   - `pd.merge(left_df, right_df, left_on=[list of join keys in the left_df], right_on=[list of join keys in the right_df], how="left")`
 
 ## Visualization by plotly
+Use like ggplot in R
+```
+import plotly.express as px
+
+fig = px.line(df, x="col1", y="col2", color="col3")
+fig.show()
+```
