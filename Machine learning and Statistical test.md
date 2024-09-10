@@ -51,7 +51,7 @@ regr.coef_    # numpy array of X coefficients
 regr.intercept_    # intercept
 
 # prediction: probability of y=1
-predicted = regr.predict_proba(new_X)[:, 1]    # [:, 1] is array of Prob(y=0)
+predicted = regr.predict_proba(new_X)[:, 1]    # [:, 1] is array of Prob(y=1)
 ```
 ## Statistical test: statsmodels
 ```
